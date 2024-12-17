@@ -1,0 +1,88 @@
+#!/bin/sh -u
+PATH=/bin:/usr/bin ; export PATH
+umask 022
+
+#Student name: Quoc Phong Tran
+#Student number: 041134348
+#Course: CST8102_330
+#Purpose:the script processes integers, classifies them into ranges based on a positive integer (X) and sorts them into odd/even filesunder an output directory. It also validates inputs, handles errors.
+
+#remove a directory or a file named "output"
+#if unable to remove directory or file named output, send an error message and display more usefull error message to the user, status exit of 2
+
+if [ -e output ]; then
+	if ! rm -rf output; then 
+	   echo "Insufficient permisssions to delete the directory. Checks permissions." >&2
+	   echo "Usage: $0 change permissions" >&2
+	   exit 2
+	fi
+fi
+
+# create new "output" directory
+#if unable to create output directory, send an error message and an usage message to the user, status exit of 2
+
+if ! mkdir output; then 
+	echo "Insufficient Permissions to create 'output' directory. Checks permissions" >&2
+	echo "Usage: $0 change permissions" >&2
+	exit 2
+fi
+#validate number of arguments
+#if the number of arguments are less then 1, 
+#  display an error message and an usage message to the user, status exit of 1
+if test "$#" -lt 1; then
+	echo "Insufficient arguments. Found $# ($*); need at least 1" >&2
+	echo "Usage: $0 one or more arguments" >&2
+	exit 1
+fi
+
+# this function classifies a given number into specific range based on the value of X and appends it to the appropriate file. 
+ClassifyNumber() {
+	
+	local number="$1"
+	local section_file=""
+	if test "$number" -lt 0; then
+		section_file="output/sect0"
+	elif test "$number" -lt $((X/4)); then
+		section_file="output/sect1"
+	elif test "$number" -lt $((X/2)); then
+		section_file="output/sect2"
+	elif test "$number" -lt $((X)); then
+		section_file="output/sect3"
+	elif test "$number" -lt $((2 * X)); then	
+		section_file="output/sect4"
+	elif test "$number" -ge $(( 2 * X)); then
+		section_file="output/sect5"
+	fi
+	# skip if no matching section
+	if test -z "$section_file"; then
+		return
+	fi
+	# clarify and append "_odd" or "_even" to section_file
+	if test $(($number % 2)) -eq 0; then
+		section_file="${section_file}_even.txt"
+	else
+		section_file="${section_file}_odd.txt"
+	fi
+	#append number to the appropriate file
+	echo "$number" >> "$section_file"
+}
+#read first argument as X
+X="$1"
+shift
+# Validate X
+# if the first argument is less than zero, display an error message
+# and an usage message to the user, status exit of 3
+if test "$X" -le 0; then
+	echo " First argument (X) is expected to be a positive integer. Found '$X'." >&2
+	echo "Usage: $0 positive integers" >&2
+	exit 3
+fi
+
+#iterate remaining arguments
+# the loop continues as long as there are positional arguments left to process after processing an argument, the shift command removes it from the argument list, moving to the next one
+while test "$#" -gt 0; do
+	ClassifyNumber "$1"
+	shift
+done
+#exit the script with a status of 0
+exit 0
